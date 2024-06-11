@@ -5,9 +5,11 @@ local Network = Class{}
 function Network:init(port)
     self.port = port
     self.udp = socket.udp()
-    self.udp:settimeout(1)
+    self.udp:settimeout(0)
     self.udp:setsockname("0.0.0.0", 12345)
     self.udp:setoption("broadcast", true)
+
+    local ip, port = self.udp:getsockname()
 
     self.clients = {}
 end
@@ -21,16 +23,18 @@ function Network:broadcast(data, port)
 end
 
 function Network:receive()
-    local data, msg_or_ip, port_or_nil
-    repeat
-        data, msg_or_ip, port_or_nil = self.udp:receivefrom()
+    -- local data, msg_or_ip, port_or_nil
+    -- repeat
+        local data, msg_or_ip, port_or_nil = self.udp:receivefrom()
         if data then
-            local ent, cmd, parms = data:match("^(%S*) (%S*) (.*)")
+            return data, msg_or_ip, port_or_nil
             
-        elseif msg_or_ip ~= 'timeout' then 
+        elseif msg_or_ip ~= 'timeout' then
 			error("Network error: "..tostring(msg_or_ip))
+
+            return false
         end
-    until not data
+    -- until not data
 end
 
 return Network
