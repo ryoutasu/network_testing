@@ -101,14 +101,25 @@ function MainMenu:init()
     end)
 
 
-    x, y, w, h = serverButton.x, y + h + ys, serverButton.w, h
-    local refreshButton = Urutora.button({
+    x, y, w, h = x, y + h + ys, w, 30
+    local serverPortLabel = Urutora.label({
         x = x, y = y,
-        w = w, h = h,
+        w = 100, h = h,
+        text = 'Server port:'
+    }):left()
+    local serverPortText = Urutora.text({
+        x = x + xs + serverPortLabel.w, y = y,
+        w = 110, h = h,
+        text = '12345'
+    }):right()
+    -- x, y, w, h = serverButton.x, y + h + ys, serverButton.w, h
+    local refreshButton = Urutora.button({
+        x = serverPortText.x + serverPortText.w + xs, y = y,
+        w = 120, h = h,
         text = 'Refresh'
     }):disable()
     refreshButton:action(function (e)
-        Host:broadcast('is_server_up')
+        Host:broadcast('is_server_up', serverPortText.text)
     end)
 
     u:add(label)
@@ -121,6 +132,8 @@ function MainMenu:init()
     u:add(serverLabel)
     u:add(serverText)
     u:add(serverButton)
+    u:add(serverPortLabel)
+    u:add(serverPortText)
     u:add(refreshButton)
 
     self.label = label

@@ -3,7 +3,7 @@ local ServerState = Class{}
 local xs, ys = 15, 15
 
 function ServerState:host()
-    return self.clients[self.clientsID[1]]
+    return self.clients[1]
 end
 
 function ServerState:is_host()
@@ -11,18 +11,22 @@ function ServerState:is_host()
 end
 
 function ServerState:addClient(ip, port, name, id)
-    local address = ip..'/'..port
-    if not self.clients[address] then
-        self.clients[address] = {
+    for i, client in ipairs(self.clients) do
+        if client.ip == ip and client.port == port then
+            return client
+        end
+    end
+
+    if not self.clients[id] then
+        self.clients[id] = {
             id = id,
             ip = ip,
             port = port,
             name = name
         }
-        self.clientsID[id] = address
     end
 
-    return self.clients[address]
+    return self.clients[id]
 end
 
 function ServerState:addMessage(new_message, sender)
@@ -32,8 +36,7 @@ function ServerState:addMessage(new_message, sender)
     })
 
     for i, message in ipairs(self.messages) do
-        local clientAddress = self.clientsID[message.sender]
-        local client = self.clients[clientAddress]
+        local client = self.clients[message.sender]
         
         local messageLabel = self.messageListPanel:getChildren(i, 1)
         if messageLabel then
@@ -48,7 +51,7 @@ function ServerState:addMessage(new_message, sender)
 end
 
 function ServerState:sendMessage(message, sender_id)
-    for key, client in pairs(self.clients) do
+    for id, client in pairs(self.clients) do
         Host:send({ cmd = 'msg', msg = message, sender = sender_id }, client.ip, client.port)
     end
 end
@@ -57,7 +60,6 @@ function ServerState:init()
     local u = Urutora:new()
 
     self.clients = {}
-    self.clientsID = {}
     self.messages = {}
     
     local x, y, w, h = xs, ys, 550-xs-xs, 30
@@ -112,9 +114,8 @@ end
 function ServerState:config(username)
     -- print(Host.ip, Host.port, username)
     local client = self:addClient(Host.ip, Host.port, username, 1)
-    -- self.host = self.clients[address]
     self.current_client = client
-    Host:broadcast({ cmd = 'server_up', name = self.name, users = #self.clientsID, maxUsers = 20 })
+    Host:broadcast({ cmd = 'server_up', name = self.name, users = #self.clients, maxUsers = 20 })
     self:sendMessage('[Connected]', client.id)
     self:receive()
 end
@@ -128,9 +129,6 @@ function ServerState:enter(state, serverName, username, server)
     else
         Host:send({ cmd = 'connect', username = username }, server.ip, server.port)
     end
-
-    -- self.current_client = client
-    -- self:receive()
 end
 
 function ServerState:receive()
@@ -141,34 +139,32 @@ function ServerState:receive()
         -- print(data, msg_or_ip, port_or_nil)
         if type(data) == "string" then
             if data == 'is_server_up' and self:is_host() then
-                Host:send({ cmd = 'server_up', name = self.name, users = #self.clientsID, maxUsers = 20 }, msg_or_ip, port_or_nil)
+                Host:send({ cmd = 'server_up', name = self.name, users = #self.clients, maxUsers = 20 }, msg_or_ip, port_or_nil)
             end
         end
         
         if type(data) == "table" then
             -- print(data.cmd)
             if data.cmd == 'connect' then
-                Host:send({ cmd = 'clients', clients = self.clients, clientsID = self.clientsID }, msg_or_ip, port_or_nil)
-                local id = #self.clientsID + 1
-                for address, client in pairs(self.clients) do
-                    Host:send({ cmd = 'new_client', id = id, ip = msg_or_ip, port = port_or_nil, username = data.username }, client.ip, client.port)
+                local new_id = #self.clients + 1
+                for id, client in ipairs(self.clients) do
+                    Host:send({ cmd = 'new_client', id = new_id, ip = msg_or_ip, port = port_or_nil, username = data.username }, client.ip, client.port)
                 end
-                Host:send({ cmd = 'new_client', id = id, ip = msg_or_ip, port = port_or_nil, username = data.username }, msg_or_ip, port_or_nil)
+                Host:send({ cmd = 'clients', clients = self.clients, id = new_id, ip = msg_or_ip, port = port_or_nil, username = data.username }, msg_or_ip, port_or_nil)
             end
 
             if data.cmd == 'clients' then
                 self.clients = data.clients
-                self.clientsID = data.clientsID
+                
+                local port = tonumber(data.port)
+                local client = self:addClient(data.ip, port, data.username, data.id)
+                self.current_client = client
+                self:sendMessage('[Connected]', data.id)
             end
 
             if data.cmd == 'new_client' then
                 local port = tonumber(data.port)
                 local client = self:addClient(data.ip, port, data.username, data.id)
-                if Host.ip == data.ip and Host.port == port then
-                    -- print('Added client is current client')
-                    self.current_client = client
-                    self:sendMessage('[Connected]', data.id)
-                end
             end
 
             if data.cmd == 'msg' then
@@ -178,13 +174,9 @@ function ServerState:receive()
     end
 end
 
-local timer, receiveTime = 0, 2
+local timer, receiveTime = 0, 1
 function ServerState:update(dt)
-    timer = timer + dt
-    if timer >= receiveTime then
-        self:receive()
-        timer = 0
-    end
+    self:receive()
 
     self.u:update(dt)
 end
