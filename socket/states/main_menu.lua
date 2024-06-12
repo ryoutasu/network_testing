@@ -104,12 +104,12 @@ function MainMenu:init()
     x, y, w, h = x, y + h + ys, w, 30
     local serverPortLabel = Urutora.label({
         x = x, y = y,
-        w = 100, h = h,
-        text = 'Server port:'
+        w = 110, h = h,
+        text = 'Search port:'
     }):left()
     local serverPortText = Urutora.text({
         x = x + xs + serverPortLabel.w, y = y,
-        w = 110, h = h,
+        w = 100, h = h,
         text = '12345'
     }):right()
     -- x, y, w, h = serverButton.x, y + h + ys, serverButton.w, h

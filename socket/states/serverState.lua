@@ -26,6 +26,13 @@ function ServerState:addClient(ip, port, name, id)
         }
     end
 
+    local userLabel = self.userlistPanel:getChildren(id, 1)
+    if not userLabel then
+        self.userlistPanel:addAt(id, 1, Urutora.label({
+            text = name, tag = 'user_' .. id
+        }):left())
+    end
+
     return self.clients[id]
 end
 
@@ -74,7 +81,14 @@ function ServerState:init()
         x = x, y = y,
         w = w, h = h,
         text = 'Message...'
-    }):right()
+    }):right():action(function (e)
+        if e.value.scancode == 'return' then
+            self:sendMessage(e.value.newText, self.current_client.id)
+            self:receive()
+            u:setFocusedNode(e.target)
+            e.target.text = ''
+        end
+    end)
     local sendButton = Urutora.button({
         x = messageText.x + messageText.w + 10, y = y,
         w = 40, h = h,
@@ -83,6 +97,8 @@ function ServerState:init()
     sendButton:action(function (e)
         self:sendMessage(messageText.text, self.current_client.id)
         self:receive()
+        u:setFocusedNode(messageText.text)
+        messageText.text = ''
     end)
 
     x, y, w, h = x, y + label.h + ys, 550-xs-xs, 480
@@ -100,13 +116,31 @@ function ServerState:init()
     --     }):left())
     -- end
 
+    x, y, w, h = label.x + label.w + xs, ys, 200, 30
+    local userlistLabel = Urutora.label({
+        x = x, y = y,
+        w = w, h = h,
+        text = 'Userlist:'
+    }):left()
+    rows, cols = 20, 1
+    h = 480
+    local userlistPanel = Urutora.panel({
+        x = x, y = y + userlistLabel.h + ys,
+        w = w, h = h,
+        rows = rows, cols = cols,
+        cellHeight = h/rows
+    })
+
     u:add(label)
     u:add(messageText)
     u:add(sendButton)
     u:add(messageListPanel)
+    u:add(userlistLabel)
+    u:add(userlistPanel)
 
     self.label = label
     self.messageListPanel = messageListPanel
+    self.userlistPanel = userlistPanel
 
     self.u = u
 end
@@ -185,11 +219,16 @@ function ServerState:draw()
     self.u:draw()
 end
 
+function ServerState:keypressed(key, scancode, isrepeat)
+    -- if key == 'enter' then
+        
+    -- end
+    self.u:keypressed(key, scancode, isrepeat)
+end
 function ServerState:mousepressed(x, y, button) self.u:pressed(x, y, button) end
 function ServerState:mousemoved(x, y, dx, dy) self.u:moved(x, y, dx, dy) end
 function ServerState:mousereleased(x, y, button) self.u:released(x, y, button) end
 function ServerState:textinput(text) self.u:textinput(text) end
-function ServerState:keypressed(k, scancode, isrepeat) self.u:keypressed(k, scancode, isrepeat) end
 function ServerState:wheelmoved(x, y) self.u:wheelmoved(x, y) end
 
 return ServerState

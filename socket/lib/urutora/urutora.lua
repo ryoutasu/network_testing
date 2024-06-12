@@ -14,7 +14,7 @@ local toggle 	    = require(modules .. 'toggle')
 local progressBar = require(modules .. 'progressBar')
 local joy 		    = require(modules .. 'joy')
 
-local kat = require(modules .. 'katsudo') 
+local kat = require(modules .. 'katsudo')
 
 local urutora = class('urutora')
 urutora.utils = utils

@@ -7,8 +7,11 @@ Network = require 'network'
 
 MainMenu = require 'states.main_menu'
 ServerState = require 'states.serverState'
+DefaultFont = love.graphics.newFont('fonts/proggy-square-rr.ttf', 20)
+Urutora.setDefaultFont(DefaultFont)
 
 function love.load()
+    love.graphics.setDefaultFilter( 'nearest', 'nearest' )
     love.graphics.setBackgroundColor(0.65, 0.65, 0.65, 1)
     love.graphics.setColor(0, 0, 0, 1)
     
