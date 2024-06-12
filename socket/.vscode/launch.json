@@ -5,6 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug Love",
+            "type": "lua-local",
+            "request": "launch",
+            "program": {
+                "command": "love"
+            },
+            "args": 
+            [
+                "${workspaceFolder}",
+                "vsc_debug"
+            ],
+        },
+        {
             "name": "Debug Lua Interpreter",
             "type": "lua-local",
             "request": "launch",
@@ -22,18 +35,5 @@
             },
             "args": []
         },
-        {
-            "name": "Debug Love",
-            "type": "lua-local",
-            "request": "launch",
-            "program": {
-                "command": "love"
-            },
-            "args": 
-            [
-                "${workspaceFolder}",
-                "vsc_debug"
-            ],
-          }
     ]
 }

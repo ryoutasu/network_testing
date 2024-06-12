@@ -4,10 +4,12 @@ local xs, ys = 15, 15
 
 function MainMenu:createHost(port)
     if tonumber(port) > 65535 then return false end
-    Host = Network(port)
+    Host = Network(tonumber(port))
     self.portText:disable()
     self.connectButton:disable()
     self.serverButton:enable()
+    self.refreshButton:enable()
+    return true
 end
 
 function MainMenu:init()
@@ -43,13 +45,26 @@ function MainMenu:init()
 
 
     x, y, w, h = x + label.w + xs + xs, ys, w, 30
+    local usernameLabel = Urutora.label({
+        x = x, y = y,
+        w = 100, h = h,
+        text = 'Username:'
+    }):left()
+    local usernameText = Urutora.text({
+        x = x + xs + usernameLabel.w, y = y,
+        w = 220, h = h,
+        text = 'user_' .. math.random(1, 1024)
+    }):right()
+
+
+    x, y, w, h = x, y + h + ys, w, 30
     local portLabel = Urutora.label({
         x = x, y = y,
         w = 50, h = h,
         text = 'Port:'
     }):left()
     local portText = Urutora.text({
-        x = x + xs + 50, y = y,
+        x = x + xs + portLabel.w, y = y,
         w = 160, h = h,
         text = '12345'
     }):right()
@@ -60,7 +75,7 @@ function MainMenu:init()
     })
     connectButton:action(function (e)
         if not self:createHost(portText.text) then return end
-        Host:broadcast('check_server', Host.port)
+        Host:broadcast('is_server_up')
         self.connected = true
     end)
 
@@ -72,9 +87,9 @@ function MainMenu:init()
         text = 'Name:'
     }):left()
     local serverText = Urutora.text({
-        x = x + xs + 50, y = y,
+        x = x + xs + serverLabel.w, y = y,
         w = 160, h = h,
-        text = 'Server name'
+        text = 'New server ' .. math.random(1, 1024)
     }):right()
     local serverButton = Urutora.button({
         x = serverText.x + serverText.w + xs, y = y,
@@ -82,34 +97,52 @@ function MainMenu:init()
         text = 'Create server'
     }):disable()
     serverButton:action(function (e)
-        Gamestate.switch(ServerState, serverText.text)
+        Gamestate.switch(ServerState, serverText.text, usernameText.text, { ip = Host.ip, port = Host.port })
     end)
 
-    -- x, y, w, h = x + label.w + xs + xs, ys, w, 50
-    -- local refreshButton = Urutora.button({
-    --     x = x, y = y,
-    --     w = w, h = h,
-    --     text = 'Refresh'
-    -- }):action(function (e)
-        
-    -- end)
+
+    x, y, w, h = x, y + h + ys, w, 30
+    local serverPortLabel = Urutora.label({
+        x = x, y = y,
+        w = 110, h = h,
+        text = 'Search port:'
+    }):left()
+    local serverPortText = Urutora.text({
+        x = x + xs + serverPortLabel.w, y = y,
+        w = 100, h = h,
+        text = '12345'
+    }):right()
+    -- x, y, w, h = serverButton.x, y + h + ys, serverButton.w, h
+    local refreshButton = Urutora.button({
+        x = serverPortText.x + serverPortText.w + xs, y = y,
+        w = 120, h = h,
+        text = 'Refresh'
+    }):disable()
+    refreshButton:action(function (e)
+        Host:broadcast('is_server_up', serverPortText.text)
+    end)
 
     u:add(label)
     u:add(serverListPanel)
+    u:add(usernameLabel)
+    u:add(usernameText)
     u:add(portLabel)
     u:add(portText)
     u:add(connectButton)
     u:add(serverLabel)
     u:add(serverText)
     u:add(serverButton)
-    -- u:add(refreshButton)
+    u:add(serverPortLabel)
+    u:add(serverPortText)
+    u:add(refreshButton)
 
     self.label = label
     self.serverListPanel = serverListPanel
+    self.usernameText = usernameText
     self.portText = portText
     self.connectButton = connectButton
     self.serverButton = serverButton
-    -- self.createServerButton = refreshButton
+    self.refreshButton = refreshButton
 
     self.u = u
     self.connected = false
@@ -119,11 +152,12 @@ function MainMenu:addServerToList(ip, port, data)
     local address = ip..'/'..port
     if not self.serverList[address] then
         local id = #self.serverList + 1
-        self.serverList[address] = {
+        local server = {
             ip = ip,
             port = port,
             id = id
         }
+        self.serverList[address] = server
         self.serverListID[id] = address
 
         local button = self.serverListPanel:findFromTag('button_'..id)
@@ -131,22 +165,29 @@ function MainMenu:addServerToList(ip, port, data)
 
         button.text = data.name
         label.text = data.users..'/'..data.maxUsers
+
+        button:enable():action(function (e)
+            Gamestate.switch(ServerState, data.name, self.usernameText.text, { ip = ip, port = port })
+        end)
     end
 end
 
 function MainMenu:receive()
-    local data, msg_or_ip, port_or_nil
-    repeat
-        data, msg_or_ip, port_or_nil = Host:receive()
+    while true do
+        local data, msg_or_ip, port_or_nil = Host:receive()
+        -- data, msg_or_ip, port_or_nil = Host.udp:receivefrom()
+        if not data then return end
+
+        -- print(data, msg_or_ip, port_or_nil)
         if type(data) == "table" then
             if data.cmd == 'server_up' then
                 self:addServerToList(msg_or_ip, port_or_nil, data)
             end
         end
-    until not data
+    end
 end
 
-local timer, receiveTime = 0, 10
+local timer, receiveTime = 0, 2
 function MainMenu:update(dt)
     if self.connected then
         timer = timer + dt

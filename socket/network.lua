@@ -1,15 +1,38 @@
 local socket = require 'socket'
+local bitser = require 'lib.bitser'
 
 local Network = Class{}
+
+function Network:address()
+    return self.ip .. '/' .. self.port
+end
 
 function Network:init(port)
     self.port = port
     self.udp = socket.udp()
     self.udp:settimeout(0)
-    self.udp:setsockname("0.0.0.0", 12345)
+    self.udp:setsockname("0.0.0.0", port)
     self.udp:setoption("broadcast", true)
 
-    local ip, port = self.udp:getsockname()
+    -- self.bitser = bitser
+    
+    local received, i = false, 0
+    while not received and i < 10 do
+        local r = math.random(1, 65536)
+
+        self.udp:sendto(r, '255.255.255.255', port)
+        local msg, ip, port = self.udp:receivefrom()
+        
+        if tonumber(msg) == r then
+            self.ip = ip
+            received = true
+        end
+
+        i = i + 1
+    end
+    if not received then
+        print("Error: can't find IP")
+    end
 
     self.clients = {}
 end
@@ -18,15 +41,22 @@ end
 --     self.udp:setpeername(ip, port)
 -- end
 
+function Network:send(data, ip, port)
+    local serializedData = bitser.dumps(data)
+
+    self.udp:sendto(serializedData, ip, port or self.port)
+end
+
 function Network:broadcast(data, port)
-    self.udp:sendto(data, '255.255.255.255', port or self.port)
+    self:send(data, '255.255.255.255', port or self.port)
 end
 
 function Network:receive()
     -- local data, msg_or_ip, port_or_nil
     -- repeat
-        local data, msg_or_ip, port_or_nil = self.udp:receivefrom()
-        if data then
+        local serializedData, msg_or_ip, port_or_nil = self.udp:receivefrom()
+        if serializedData then
+            local data = bitser.loads(serializedData)
             return data, msg_or_ip, port_or_nil
             
         elseif msg_or_ip ~= 'timeout' then
