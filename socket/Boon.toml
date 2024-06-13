@@ -4,10 +4,10 @@
 [project]
 # Author information. If you have a company, then use that in this
 # field instead.
-authors = "Developer Name"
+authors = "Padparadscha"
 
 # A description of your game. Not used in all builds.
-description = "Your description here."
+description = "Super chat"
 
 # An email to contact for support or more information. Not used
 # in all builds.
@@ -17,11 +17,11 @@ email = "email@example.com"
 # or other special characters, though they can be used. On Windows,
 # this will end up as the name of the executable file.
 # Example: "My Game" and package_name="my_game" becomes "my_game.exe"
-package_name = "my_game"
+package_name = "SuperChat"
 
 # The name of your game. This will be used when distributing the Game
 # as a zip file. On macOS, this is also used as the app file name.
-title = "My Game"
+title = "SuperChat"
 
 # The website associated with your game. Not used in all builds.
 url = "http://www.example.com/"

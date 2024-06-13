@@ -80,7 +80,7 @@ function ServerState:init()
     local messageText = Urutora.text({
         x = x, y = y,
         w = w, h = h,
-        text = 'Message...'
+        text = 'Hello there!'
     }):right():action(function (e)
         if e.value.scancode == 'return' then
             self:sendMessage(e.value.newText, self.current_client.id)
@@ -97,7 +97,7 @@ function ServerState:init()
     sendButton:action(function (e)
         self:sendMessage(messageText.text, self.current_client.id)
         self:receive()
-        u:setFocusedNode(messageText.text)
+        u:setFocusedNode(messageText)
         messageText.text = ''
     end)
 
@@ -188,7 +188,10 @@ function ServerState:receive()
             end
 
             if data.cmd == 'clients' then
-                self.clients = data.clients
+                for id, client in ipairs(data.clients) do
+                    self:addClient(client.ip, client.port, client.name, id)
+                end
+                -- self.clients = data.clients
                 
                 local port = tonumber(data.port)
                 local client = self:addClient(data.ip, port, data.username, data.id)
