@@ -1,30 +1,24 @@
 local MainMenu = Class{}
 
-local win_width = love.graphics.getWidth()
-local win_height = love.graphics.getHeight()
-
 local ys = 30
-
-local font = love.graphics.newFont(10)
-local align = 'center'
 
 function MainMenu:init()
     local u = Urutora:new()
     
-    local center_x = win_width / 2
+    local center_x = WIN_WIDTH / 2
     local w, h = 400, 35
     local x, y = center_x - w/2, ys
     local label = u.label({
         x = x, y = y,
         w = w, h = h,
-        align = align,
+        align = 'center',
         text = 'The Game'
-    }):setStyle({ font = love.graphics.newFont(40) })
+    }):setStyle({ font = LABEL_FONT })
     y = y + h
     local label2 = u.label({
         x = x, y = y,
         w = w, h = h,
-        align = align,
+        align = 'center',
         text = 'about rock-paper-scissors'
     }):setStyle({ font = love.graphics.newFont(15) })
 
@@ -33,21 +27,25 @@ function MainMenu:init()
     local startButton = u.button({
         x = x, y = y,
         w = w, h = h,
-        text = 'Start'
-    })
+        text = 'Host game'
+    }):action(function ()
+        Gamestate.switch(HostGameState)
+    end)
     
     w = 150
     x, y, w, h = center_x - w/2, y + 50, w, h
-    local findGameButton = u.button({
+    local joinGameButton = u.button({
         x = x, y = y,
         w = w, h = h,
-        text = 'Find game'
-    })
+        text = 'Join game'
+    }):action(function ()
+        Gamestate.switch(GameListState)
+    end)
 
     u:add(label)
     u:add(label2)
     u:add(startButton)
-    u:add(findGameButton)
+    u:add(joinGameButton)
     
     self.u = u
 end

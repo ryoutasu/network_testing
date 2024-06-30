@@ -1,4 +1,4 @@
-local ServerState = Class{}
+local ServerState = Class({})
 
 local xs, ys = 15, 15
 

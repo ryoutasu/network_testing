@@ -1,10 +1,14 @@
 if arg[#arg] == "vsc_debug" then require("lldebugger").start() end
 
+require 'utils'
+
 Class = require 'lib.class'
 Gamestate = require 'lib.gamestate'
 Urutora = require 'lib.urutora'
 
 MainMenu = require 'state.mainMenu'
+HostGameState = require 'state.hostGameState'
+GameListState = require 'state.gameListState'
 
 function love.load()
     love.graphics.setDefaultFilter( 'nearest', 'nearest' )
