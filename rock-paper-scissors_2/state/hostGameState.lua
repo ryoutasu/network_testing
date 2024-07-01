@@ -22,9 +22,18 @@ function HostGameState:init()
     }):action(function ()
         Gamestate.switch(MainMenu)
     end)
+
+    w = 150
+    x, y, w, h = center_x - w/2, y + 100, w, h
+    local startButton = u.button({
+        x = x, y = y,
+        w = w, h = h,
+        text = 'Start'
+    })
     
     u:add(label)
     u:add(backButton)
+    u:add(startButton)
 
     self.u = u
 end

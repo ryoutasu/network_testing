@@ -22,9 +22,17 @@ function MainMenu:init()
         text = 'about rock-paper-scissors'
     }):setStyle({ font = love.graphics.newFont(15) })
 
+    local exitButton = u.button({
+        x = 0, y = 0,
+        w = 70, h = 30,
+        text = 'Exit'
+    }):action(function ()
+        love.event.quit()
+    end)
+
     w = 150
     x, y, w, h = center_x - w/2, y + 100, w, h
-    local startButton = u.button({
+    local hostGameButton = u.button({
         x = x, y = y,
         w = w, h = h,
         text = 'Host game'
@@ -44,7 +52,8 @@ function MainMenu:init()
 
     u:add(label)
     u:add(label2)
-    u:add(startButton)
+    u:add(exitButton)
+    u:add(hostGameButton)
     u:add(joinGameButton)
     
     self.u = u
