@@ -32,6 +32,15 @@ function MainMenu:init()
 
     w = 150
     x, y, w, h = center_x - w/2, y + 100, w, h
+    local playernameText = u.text({
+        x = x, y = y,
+        w = w, h = h,
+        align = 'center',
+        text = 'Username'
+    })
+
+    w = 150
+    x, y, w, h = center_x - w/2, y + 75, w, h
     local hostGameButton = u.button({
         x = x, y = y,
         w = w, h = h,
@@ -47,12 +56,14 @@ function MainMenu:init()
         w = w, h = h,
         text = 'Join game'
     }):action(function ()
+        
         Gamestate.switch(GameListState)
     end)
 
     u:add(label)
     u:add(label2)
     u:add(exitButton)
+    u:add(playernameText)
     u:add(hostGameButton)
     u:add(joinGameButton)
     

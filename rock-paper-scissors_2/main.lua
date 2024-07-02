@@ -5,6 +5,7 @@ require 'utils'
 Class = require 'lib.class'
 Gamestate = require 'lib.gamestate'
 Urutora = require 'lib.urutora'
+Network = require 'network'
 
 MainMenu = require 'state.mainMenu'
 HostGameState = require 'state.hostGameState'

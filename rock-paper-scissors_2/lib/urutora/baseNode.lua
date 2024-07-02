@@ -229,12 +229,19 @@ function baseNode:drawText(color)
   local _, fgc = self:getLayerColors()
   local x = self:centerX() - utils.textWidth(self) / 2
   local y = self:centerY() - utils.textHeight(self) / 2
-  if self.type == utils.nodeTypes.TEXT then
-    x = math.floor(self.x)
-  elseif self.align == utils.alignments.LEFT then
-    x = math.floor(self.px)
+  -- if self.type == utils.nodeTypes.TEXT then
+  --   x = math.floor(self.x)
+  -- elseif self.align == utils.alignments.LEFT then
+  --   x = math.floor(self.px)
+  -- elseif self.align == utils.alignments.RIGHT then
+  --   x = math.floor(self.px + self.npw - utils.textWidth(self))
+  -- end
+  local px = self.px
+  if self.type == utils.nodeTypes.TEXT then px = self.x end
+  if self.align == utils.alignments.LEFT then
+    x = math.floor(px)
   elseif self.align == utils.alignments.RIGHT then
-    x = math.floor(self.px + self.npw - utils.textWidth(self))
+    x = math.floor(px + self.npw - utils.textWidth(self))
   end
 
   lg.setFont(self.style.font or utils.default_font)

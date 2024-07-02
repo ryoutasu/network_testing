@@ -7,7 +7,7 @@ local text = baseNode:extend('text')
 
 function text:constructor()
   text.super.constructor(self)
-  self.align = utils.alignments.LEFT
+  self.align = self.align or utils.alignments.CENTER
   self.text = self.text or ''
   self:resetCursor()
   self.cursorDelay = 0.25
@@ -35,8 +35,15 @@ function text:draw()
   end
 
   if self.focused then
+    local x = self:centerX() - utils.textWidth(self) / 2
+    if self.align == utils.alignments.LEFT then
+      x = math.floor(self.x)
+    elseif self.align == utils.alignments.RIGHT then
+      x = math.floor(self.x + self.npw - utils.textWidth(self))
+    end
+
     lg.setColor(fgc)
-    utils.print(self.cursorChar, self.x + utils.textWidth(self), textY)
+    utils.print(self.cursorChar, x + utils.textWidth(self), textY)
   end
 end
 
