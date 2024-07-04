@@ -37,7 +37,9 @@ function MainMenu:init()
         w = w, h = h,
         align = 'center',
         text = 'Username'
-    })
+    }):action(function (e)
+        Player.name = e.target.text
+    end)
 
     w = 150
     x, y, w, h = center_x - w/2, y + 75, w, h

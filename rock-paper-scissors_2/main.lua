@@ -11,6 +11,8 @@ MainMenu = require 'state.mainMenu'
 HostGameState = require 'state.hostGameState'
 GameListState = require 'state.gameListState'
 
+Player = require 'player'()
+
 function love.load()
     love.graphics.setDefaultFilter( 'nearest', 'nearest' )
     love.graphics.setBackgroundColor(0.65, 0.65, 0.65, 1)

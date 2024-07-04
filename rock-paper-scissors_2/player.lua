@@ -1,7 +1,7 @@
 local Player = Class{}
 
-function Player:init(name)
-    self.name = name
+function Player:init()
+    self.name = 'player'
 end
 
 return Player
