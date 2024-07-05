@@ -17,7 +17,7 @@ function Network:init(port)
     -- self.bitser = bitser
     
     local received, i = false, 0
-    while not received and i < 10 do
+    while not received and i < 100 do
         local r = math.random(1, 65536)
 
         self.udp:sendto(r, '255.255.255.255', port)
@@ -30,7 +30,9 @@ function Network:init(port)
 
         i = i + 1
     end
+    self.connected = true
     if not received then
+        self.connected = false
         print("Error: can't find IP")
     end
 

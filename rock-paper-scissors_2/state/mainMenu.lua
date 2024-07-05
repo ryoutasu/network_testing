@@ -48,6 +48,7 @@ function MainMenu:init()
         w = w, h = h,
         text = 'Host game'
     }):action(function ()
+        Host = Network(12345)
         Gamestate.switch(HostGameState)
     end)
     
@@ -58,7 +59,7 @@ function MainMenu:init()
         w = w, h = h,
         text = 'Join game'
     }):action(function ()
-        
+        Host = Network(12345)
         Gamestate.switch(GameListState)
     end)
 
