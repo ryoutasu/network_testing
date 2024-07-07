@@ -29,7 +29,9 @@ function HostGameState:init()
         x = x, y = y,
         w = w, h = h,
         text = 'Start'
-    })
+    }):action(function ()
+        Gamestate.switch(GameState, { ip = Host.ip, port = Host.port })
+    end)
     
     u:add(label)
     u:add(backButton)

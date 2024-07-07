@@ -26,6 +26,7 @@ function Network:init(port)
         if tonumber(msg) == r then
             self.ip = ip
             received = true
+            print('Connected.')
         end
 
         i = i + 1

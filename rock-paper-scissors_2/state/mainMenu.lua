@@ -2,6 +2,12 @@ local MainMenu = Class{}
 
 local ys = 30
 
+local function try_connect(port)
+    port = port or 12345
+    if Host then return end
+    Host = Network(port)
+end
+
 function MainMenu:init()
     local u = Urutora:new()
     
@@ -36,7 +42,7 @@ function MainMenu:init()
         x = x, y = y,
         w = w, h = h,
         align = 'center',
-        text = 'Username'
+        text = Player.name
     }):action(function (e)
         Player.name = e.target.text
     end)
@@ -48,7 +54,7 @@ function MainMenu:init()
         w = w, h = h,
         text = 'Host game'
     }):action(function ()
-        Host = Network(12345)
+        try_connect()
         Gamestate.switch(HostGameState)
     end)
     
@@ -59,7 +65,7 @@ function MainMenu:init()
         w = w, h = h,
         text = 'Join game'
     }):action(function ()
-        Host = Network(12345)
+        try_connect()
         Gamestate.switch(GameListState)
     end)
 

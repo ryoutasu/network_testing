@@ -10,6 +10,7 @@ Network = require 'network'
 MainMenu = require 'state.mainMenu'
 HostGameState = require 'state.hostGameState'
 GameListState = require 'state.gameListState'
+GameState = require 'state.gameState'
 
 Player = require 'player'()
 
