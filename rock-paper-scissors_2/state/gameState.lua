@@ -18,7 +18,10 @@ local lineLength = 600
 local lineColorGreen = { 0, 1, 0, 1 }
 local lineColorRed = { 1, 0, 0, 1 }
 local roundTime = 10
-local lineExtensionTime = 1
+local lineExtensionTime = 3
+
+local bigLabel_y = center_y - 100
+local bigLabel_offset_y = 130
 
 function GameState:lock()
     self.rockButton:disable()
@@ -27,7 +30,6 @@ function GameState:lock()
 end
 
 function GameState:setSign(sign)
-    self:lock()
     self.rockButton.y = button_y
     self.paperButton.y = button_y
     self.scissorsButton.y = button_y
@@ -42,7 +44,8 @@ function GameState:setSign(sign)
         self[sign..'Button'].y = button_y_clicked
 
         if opponent and opponent.ready then
-            -- begin countdown
+            -- begin countdown ?
+            self:lock()
         end
     end
 
@@ -54,20 +57,43 @@ end
 function GameState:init()
     local u = Urutora:new()
 
-    local w, h = 100, 30
-    local x, y = 30, WIN_HEIGHT - 100
+    local w, h = 400, 40
+    local x, y = center_x - w/2, bigLabel_y
+    local gameResultLabel = Urutora.label({
+        x = x, y = y,
+        w = w, h = h,
+        text = 'Game result',
+    }):setStyle({ font = LABEL_FONT }):hide()
 
+    w, h = 100, 30
+    x, y = 30, bigLabel_y + bigLabel_offset_y
     local playerLabel = u.label({
         x = x, y = y,
         w = w, h = h,
-        text = 'Player'
+        text = 'Player: 0'
     })
 
+    x, y = 30, bigLabel_y - bigLabel_offset_y
     local opponentLabel = u.label({
-        x = x, y = 100 - h,
+        x = x, y = y,
         w = w, h = h,
-        text = 'Opponent...'
+        text = 'Opponent...: 0'
     })
+
+    w = 100
+    x, y = center_x - w/2, playerLabel.y
+    local playerSignLabel = u.label({
+        x = x, y = y,
+        w = w, h = h,
+        text = 'Player sign'
+    }):hide()
+
+    y = opponentLabel.y
+    local opponentSignLabel = u.label({
+        x = x, y = y,
+        w = w, h = h,
+        text = 'Opponent sign'
+    }):hide()
 
     -- Game controls
     w, h = button_w, button_h
@@ -103,19 +129,26 @@ function GameState:init()
     end)
     -- Game controls
 
+    u:add(gameResultLabel)
     u:add(playerLabel)
     u:add(opponentLabel)
+    u:add(playerSignLabel)
+    u:add(opponentSignLabel)
     u:add(rockButton)
     u:add(paperButton)
     u:add(scissorsButton)
     
+    self.gameResultLabel = gameResultLabel
     self.playerLabel = playerLabel
     self.opponentLabel = opponentLabel
+    self.playerSignLabel = playerSignLabel
+    self.opponentSignLabel = opponentSignLabel
     self.rockButton = rockButton
     self.paperButton = paperButton
     self.scissorsButton = scissorsButton
 
     self.u = u
+    setup_state_input(self)
     self.opponent = false
     self.currentSign = nil
 
@@ -127,11 +160,16 @@ function GameState:init()
     }
     self.tweenLineColor = nil
     self.tweenLineLength = nil
+
+    self.roundNum = 0
+    self.inGameList = false
+
+    self.paused = false
 end
 
 function GameState:enterHost()
     local w, h = 400, 40
-    local x, y = center_x - w/2, center_y - h
+    local x, y = center_x - w/2, bigLabel_y
     local waitOpponentLabel = Urutora.label({
         x = x, y = y,
         w = w, h = h,
@@ -143,22 +181,28 @@ function GameState:enterHost()
     self.waitOpponentLabel = waitOpponentLabel
 
     Host:broadcast({ cmd = 'server_up', name = Player.name })
+    self.inGameList = true
 end
 
 function GameState:setOpponent(name, ip, port)
-    self.opponentLabel.text = name
+    self.opponentLabel.text = name .. ': 0'
     self.opponent = { name = name, ip = ip, port = port, ready = false }
 
     if self.is_host then
         Host:broadcast('remove_from_list')
         self.u:remove(self.waitOpponentLabel)
+        self.inGameList = false
     end
     
-    self.rockButton:enable()
-    self.paperButton:enable()
-    self.scissorsButton:enable()
+    self.line.length = 0
+    self.line.color = { lineColorRed[1], lineColorRed[2], lineColorRed[3], lineColorRed[4] }
+    self.line.extensioning = true
+    self.tweenLineLength = tween.new(lineExtensionTime, self.line, { length = lineLength })
+    self.tweenLineColor = tween.new(lineExtensionTime, self.line, { color = lineColorGreen })
 
-    self:startRound()
+    self.opponentSignLabel.text = self.opponent.name
+    self.gameResultLabel.text = 'VS'
+    self.playerSignLabel.text = Player.name
 end
 
 function GameState:enter(state, server, name)
@@ -171,10 +215,65 @@ function GameState:enter(state, server, name)
         self:setOpponent(name, server.ip, server.port)
     end
 
-    self.playerLabel.text = Player.name
+    self.playerLabel.text = Player.name .. ': 0'
     self.users = 1
+end
 
-    self:startRound()
+local function resolve(playerSign, opponentSign)
+    local result = 'draw'
+
+    if playerSign == nil then
+        result = 'lose'
+    end
+    if opponentSign == nil then
+        result = 'win'
+    end
+
+    if playerSign == 'rock' then
+        if opponentSign == 'scissors' then
+            result = 'win'
+        elseif opponentSign == 'paper' then
+            result = 'lose'
+        end
+    end
+
+    if playerSign == 'paper' then
+        if opponentSign == 'rock' then
+            result = 'win'
+        elseif opponentSign == 'scissors' then
+            result = 'lose'
+        end
+    end
+
+    if playerSign == 'scissors' then
+        if opponentSign == 'paper' then
+            result = 'win'
+        elseif opponentSign == 'rock' then
+            result = 'lose'
+        end
+    end
+
+    return result
+end
+
+function GameState:showResult(opponentSign)
+    local playerSign = self.currentSign
+    local gameResultLabel = self.gameResultLabel
+    local result = resolve(playerSign, opponentSign)
+
+    if result == 'win' then
+        gameResultLabel.text = Player.name .. ' won!'
+    end
+    
+    if result == 'lose' then
+        gameResultLabel.text = self.opponent.name .. ' won!'
+    end
+
+    if result == 'draw' then
+        gameResultLabel.text = 'Draw!'
+    end
+    
+    gameResultLabel:show()
 end
 
 local timer = 0
@@ -187,7 +286,6 @@ function GameState:receive(dt)
 
     while true do
         local data, msg_or_ip, port_or_nil = Host:receive()
-        -- data, msg_or_ip, port_or_nil = Host.udp:receivefrom()
         if not data then return end
 
         if type(data) == "string" then
@@ -201,32 +299,60 @@ function GameState:receive(dt)
                     self:lock()
                 end
             end
+
+            if data == 'quit' then
+                self:lock()
+                self.gameResultLabel.text = 'Opponent left the game'
+                    self.paused = true
+            end
         end
 
         if type(data) == "table" then
             if data.cmd == 'connect' then
                 self:setOpponent(data.name, msg_or_ip, port_or_nil)
             end
+
+            if data.cmd == 'sign' then
+                self:showResult(data.sign)
+            end
         end
     end
 end
 
 function GameState:startRound()
-    self.line.length = 0
-    self.line.color = { lineColorRed[1], lineColorRed[2], lineColorRed[3], lineColorRed[4] }
-    self.line.extensioning = true
-    self.tweenLineLength = tween.new(lineExtensionTime, self.line, { length = lineLength })
-    self.tweenLineColor = tween.new(lineExtensionTime, self.line, { color = lineColorGreen })
+    self.currentSign = nil
+    self.rockButton.y = button_y
+    self.paperButton.y = button_y
+    self.scissorsButton.y = button_y
+    
+    self.rockButton:enable()
+    self.paperButton:enable()
+    self.scissorsButton:enable()
+
+    self.roundNum = self.roundNum + 1
+
+    self.opponentSignLabel.text = ''
+    self.gameResultLabel.text = 'ROUND ' .. self.roundNum
+    self.playerSignLabel.text = ''
+    
+    self.line.extensioning = false
+    self.tweenLineLength = tween.new(roundTime, self.line, { length = 0 }, 'linear')
+    self.tweenLineColor = tween.new(roundTime, self.line, { color = lineColorRed }, 'linear')
 end
 
 function GameState:endRound()
     self.rockButton:disable()
     self.paperButton:disable()
     self.scissorsButton:disable()
-    self.rockButton.y = button_y
-    self.paperButton.y = button_y
-    self.scissorsButton.y = button_y
-    self.currentSign = nil
+
+    local opponent = self.opponent
+    if opponent then
+        Host:send({ cmd = 'sign', sign = self.currentSign }, opponent.ip, opponent.port)
+    end
+    
+    self.line.extensioning = true
+    self.tweenLineLength = tween.new(lineExtensionTime, self.line, { length = lineLength })
+    self.tweenLineColor = tween.new(lineExtensionTime, self.line, { color = lineColorGreen })
 end
 
 function GameState:updateTween(dt)
@@ -244,9 +370,7 @@ function GameState:updateTween(dt)
 
     if complete then
         if self.line.extensioning then
-            self.line.extensioning = false
-            self.tweenLineLength = tween.new(roundTime, self.line, { length = 0 }, 'linear')
-            self.tweenLineColor = tween.new(roundTime, self.line, { color = lineColorRed }, 'linear')
+            self:startRound()
         else
             self:endRound()
         end
@@ -257,23 +381,35 @@ end
 
 function GameState:update(dt)
     self:receive(dt)
-    self:updateTween(dt)
+
+    if not self.paused then
+        self:updateTween(dt)
+    end
+
     self.u:update(dt)
 end
 
 function GameState:draw()
     self.u:draw()
 
-    local line = self.line
-    love.graphics.setColor(line.color)
-    love.graphics.line(line.x, line.y, line.x + line.length, line.y)
+    if self.line.length > 0 then
+        local line = self.line
+        love.graphics.setColor(line.color)
+        love.graphics.line(line.x, line.y, line.x + line.length, line.y)
+    end
 end
 
-function GameState:mousepressed(x, y, button) self.u:pressed(x, y, button) end
-function GameState:mousemoved(x, y, dx, dy) self.u:moved(x, y, dx, dy) end
-function GameState:mousereleased(x, y, button) self.u:released(x, y, button) end
-function GameState:textinput(text) self.u:textinput(text) end
-function GameState:keypressed(k, scancode, isrepeat) self.u:keypressed(k, scancode, isrepeat) end
-function GameState:wheelmoved(x, y) self.u:wheelmoved(x, y) end
+function GameState:quit()
+    print('quitting from GameState')
+    
+    if self.inGameList then
+        Host:broadcast('remove_from_list')
+    end
+
+    local opponent = self.opponent
+    if opponent then
+        Host:send('quit', opponent.ip, opponent.port)
+    end
+end
 
 return GameState

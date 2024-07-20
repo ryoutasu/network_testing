@@ -53,6 +53,7 @@ function GameListState:init()
     self.gameListPanel = gameListPanel
     
     self.u = u
+    setup_state_input(self)
 end
 
 function GameListState:enter()
@@ -153,15 +154,8 @@ function GameListState:update(dt)
     self.u:update(dt)
 end
 
-function GameListState:draw()
-    self.u:draw()
+function GameListState:quit()
+    print('quitting from GameListState')
 end
-
-function GameListState:mousepressed(x, y, button) self.u:pressed(x, y, button) end
-function GameListState:mousemoved(x, y, dx, dy) self.u:moved(x, y, dx, dy) end
-function GameListState:mousereleased(x, y, button) self.u:released(x, y, button) end
-function GameListState:textinput(text) self.u:textinput(text) end
-function GameListState:keypressed(k, scancode, isrepeat) self.u:keypressed(k, scancode, isrepeat) end
-function GameListState:wheelmoved(x, y) self.u:wheelmoved(x, y) end
 
 return GameListState

@@ -77,6 +77,7 @@ function MainMenu:init()
     u:add(joinGameButton)
     
     self.u = u
+    setup_state_input(self)
 end
 
 
@@ -88,11 +89,8 @@ function MainMenu:draw()
     self.u:draw()
 end
 
-function MainMenu:mousepressed(x, y, button) self.u:pressed(x, y, button) end
-function MainMenu:mousemoved(x, y, dx, dy) self.u:moved(x, y, dx, dy) end
-function MainMenu:mousereleased(x, y, button) self.u:released(x, y, button) end
-function MainMenu:textinput(text) self.u:textinput(text) end
-function MainMenu:keypressed(k, scancode, isrepeat) self.u:keypressed(k, scancode, isrepeat) end
-function MainMenu:wheelmoved(x, y) self.u:wheelmoved(x, y) end
+function MainMenu:quit()
+    print('quitting from MainMenu')
+end
 
 return MainMenu

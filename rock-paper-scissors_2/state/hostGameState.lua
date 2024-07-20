@@ -38,22 +38,11 @@ function HostGameState:init()
     u:add(startButton)
 
     self.u = u
+    setup_state_input(self)
 end
 
-
-function HostGameState:update(dt)
-    self.u:update(dt)
+function HostGameState:quit()
+    print('quitting from HostGameState')
 end
-
-function HostGameState:draw()
-    self.u:draw()
-end
-
-function HostGameState:mousepressed(x, y, button) self.u:pressed(x, y, button) end
-function HostGameState:mousemoved(x, y, dx, dy) self.u:moved(x, y, dx, dy) end
-function HostGameState:mousereleased(x, y, button) self.u:released(x, y, button) end
-function HostGameState:textinput(text) self.u:textinput(text) end
-function HostGameState:keypressed(k, scancode, isrepeat) self.u:keypressed(k, scancode, isrepeat) end
-function HostGameState:wheelmoved(x, y) self.u:wheelmoved(x, y) end
 
 return HostGameState
