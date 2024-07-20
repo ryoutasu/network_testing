@@ -39,7 +39,7 @@ function HostGameState:init()
     u:add(startButton)
 
     self.u = u
-    setup_state_input(self)
+    setup_state_urutora(self)
 end
 
 function HostGameState:quit()

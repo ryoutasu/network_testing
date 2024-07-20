@@ -37,6 +37,13 @@ function MainMenu:init()
     }):action(function ()
         love.event.quit()
     end)
+    
+    local portText = u.text({
+        x = WIN_WIDTH - 100, y = 0,
+        w = 100, h = 30,
+        align = 'right',
+        text = '12345',
+    }):hide()
 
     w = 150
     x, y, w, h = center_x - w/2, y + 100, w, h
@@ -56,7 +63,7 @@ function MainMenu:init()
         w = w, h = h,
         text = 'Host game'
     }):action(function ()
-        if try_connect() then
+        if try_connect(tonumber(portText.text)) then
             Gamestate.switch(HostGameState)
         end
     end)
@@ -68,7 +75,7 @@ function MainMenu:init()
         w = w, h = h,
         text = 'Join game'
     }):action(function ()
-        if try_connect() then
+        if try_connect(tonumber(portText.text)) then
             Gamestate.switch(GameListState)
         end
     end)
@@ -77,20 +84,20 @@ function MainMenu:init()
     u:add(label2)
     u:add(exitButton)
     u:add(playernameText)
+    u:add(portText)
     u:add(hostGameButton)
     u:add(joinGameButton)
+
+    self.portText = portText
     
     self.u = u
-    setup_state_input(self)
+    setup_state_urutora(self)
 end
 
-
-function MainMenu:update(dt)
-    self.u:update(dt)
-end
-
-function MainMenu:draw()
-    self.u:draw()
+function MainMenu:keypressed(k)
+    if k == 'f1' then
+        self.portText.visible = not self.portText.visible
+    end
 end
 
 function MainMenu:quit()

@@ -54,7 +54,7 @@ function GameListState:init()
     self.gameListPanel = gameListPanel
     
     self.u = u
-    setup_state_input(self)
+    setup_state_urutora(self)
 end
 
 function GameListState:enter()
@@ -152,7 +152,6 @@ end
 
 function GameListState:update(dt)
     self:receive(dt)
-    self.u:update(dt)
 end
 
 function GameListState:quit()

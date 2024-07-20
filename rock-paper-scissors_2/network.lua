@@ -26,7 +26,7 @@ function Network:connect(port)
             self.port = port
             self.connected = true
             received = true
-            print('Connected.')
+            print('Connected. Port = ' .. port)
         end
 
         i = i + 1

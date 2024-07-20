@@ -148,7 +148,7 @@ function GameState:init()
     self.scissorsButton = scissorsButton
 
     self.u = u
-    setup_state_input(self)
+    setup_state_urutora(self)
     self.opponent = false
     self.currentSign = nil
 
@@ -385,13 +385,9 @@ function GameState:update(dt)
     if not self.paused then
         self:updateTween(dt)
     end
-
-    self.u:update(dt)
 end
 
 function GameState:draw()
-    self.u:draw()
-
     if self.line.length > 0 then
         local line = self.line
         love.graphics.setColor(line.color)
