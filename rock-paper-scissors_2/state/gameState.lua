@@ -50,7 +50,7 @@ function GameState:setSign(sign)
     end
 
     if opponent then
-        Host:send(state, opponent.ip, opponent.port)
+        Network:send(state, opponent.ip, opponent.port)
     end
 end
 
@@ -180,7 +180,7 @@ function GameState:enterHost()
 
     self.waitOpponentLabel = waitOpponentLabel
 
-    Host:broadcast({ cmd = 'server_up', name = Player.name })
+    Network:broadcast({ cmd = 'server_up', name = Player.name })
     self.inGameList = true
 end
 
@@ -189,7 +189,7 @@ function GameState:setOpponent(name, ip, port)
     self.opponent = { name = name, ip = ip, port = port, ready = false }
 
     if self.is_host then
-        Host:broadcast('remove_from_list')
+        Network:broadcast('remove_from_list')
         self.u:remove(self.waitOpponentLabel)
         self.inGameList = false
     end
@@ -206,12 +206,12 @@ function GameState:setOpponent(name, ip, port)
 end
 
 function GameState:enter(state, server, name)
-    self.is_host = (server.ip == Host.ip and server.port == Host.port)
+    self.is_host = (server.ip == Network.ip and server.port == Network.port)
 
     if self.is_host then
         self:enterHost()
     else
-        Host:send({ cmd = 'connect', name = Player.name }, server.ip, server.port)
+        Network:send({ cmd = 'connect', name = Player.name }, server.ip, server.port)
         self:setOpponent(name, server.ip, server.port)
     end
 
@@ -285,12 +285,12 @@ function GameState:receive(dt)
     timer = 0
 
     while true do
-        local data, msg_or_ip, port_or_nil = Host:receive()
+        local data, msg_or_ip, port_or_nil = Network:receive()
         if not data then return end
 
         if type(data) == "string" then
             if data == 'is_server_up' and self.is_host and not self.opponent then
-                Host:send({ cmd = 'server_up', name = Player.name }, msg_or_ip, port_or_nil)
+                Network:send({ cmd = 'server_up', name = Player.name }, msg_or_ip, port_or_nil)
             end
 
             if data == 'ready' then
@@ -347,7 +347,7 @@ function GameState:endRound()
 
     local opponent = self.opponent
     if opponent then
-        Host:send({ cmd = 'sign', sign = self.currentSign }, opponent.ip, opponent.port)
+        Network:send({ cmd = 'sign', sign = self.currentSign }, opponent.ip, opponent.port)
     end
     
     self.line.extensioning = true
@@ -403,12 +403,12 @@ function GameState:quit()
     print('quitting from GameState')
     
     if self.inGameList then
-        Host:broadcast('remove_from_list')
+        Network:broadcast('remove_from_list')
     end
 
     local opponent = self.opponent
     if opponent then
-        Host:send('quit', opponent.ip, opponent.port)
+        Network:send('quit', opponent.ip, opponent.port)
     end
 end
 

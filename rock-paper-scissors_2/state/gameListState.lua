@@ -24,6 +24,7 @@ function GameListState:init()
         text = 'Back'
     }):action(function ()
         Gamestate.switch(MainMenu)
+        Network:close()
     end)
 
     w, h = WIN_WIDTH - 100, WIN_HEIGHT - y - h - ys - offset
@@ -57,7 +58,7 @@ function GameListState:init()
 end
 
 function GameListState:enter()
-    Host:broadcast('is_server_up')
+    Network:broadcast('is_server_up')
 end
 
 function GameListState:addServerToList(ip, port, data)
@@ -131,7 +132,7 @@ function GameListState:receive(dt)
     timer = 0
 
     while true do
-        local data, msg_or_ip, port_or_nil = Host:receive()
+        local data, msg_or_ip, port_or_nil = Network:receive()
         -- data, msg_or_ip, port_or_nil = Host.udp:receivefrom()
         if not data then return end
 

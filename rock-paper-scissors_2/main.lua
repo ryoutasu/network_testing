@@ -5,14 +5,14 @@ require 'utils'
 Class = require 'lib.class'
 Gamestate = require 'lib.gamestate'
 Urutora = require 'lib.urutora'
-Network = require 'network'
+
+Network = require 'network'()
+Player = require 'player'()
 
 MainMenu = require 'state.mainMenu'
 HostGameState = require 'state.hostGameState'
 GameListState = require 'state.gameListState'
 GameState = require 'state.gameState'
-
-Player = require 'player'()
 
 function love.load()
     love.graphics.setDefaultFilter( 'nearest', 'nearest' )
@@ -31,4 +31,8 @@ end
 
 function love.draw()
     
+end
+
+function love.quit()
+    if Network.connected then Network:close() end
 end

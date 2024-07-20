@@ -4,8 +4,10 @@ local ys = 30
 
 local function try_connect(port)
     port = port or 12345
-    if Host then return end
-    Host = Network(port)
+
+    if Network.connected then return true end
+
+    return Network:connect(port)
 end
 
 function MainMenu:init()
@@ -54,8 +56,9 @@ function MainMenu:init()
         w = w, h = h,
         text = 'Host game'
     }):action(function ()
-        try_connect()
-        Gamestate.switch(HostGameState)
+        if try_connect() then
+            Gamestate.switch(HostGameState)
+        end
     end)
     
     w = 150
@@ -65,8 +68,9 @@ function MainMenu:init()
         w = w, h = h,
         text = 'Join game'
     }):action(function ()
-        try_connect()
-        Gamestate.switch(GameListState)
+        if try_connect() then
+            Gamestate.switch(GameListState)
+        end
     end)
 
     u:add(label)

@@ -21,6 +21,7 @@ function HostGameState:init()
         text = 'Back'
     }):action(function ()
         Gamestate.switch(MainMenu)
+        Network:close()
     end)
 
     w = 150
@@ -30,7 +31,7 @@ function HostGameState:init()
         w = w, h = h,
         text = 'Start'
     }):action(function ()
-        Gamestate.switch(GameState, { ip = Host.ip, port = Host.port })
+        Gamestate.switch(GameState, { ip = Network.ip, port = Network.port })
     end)
     
     u:add(label)
