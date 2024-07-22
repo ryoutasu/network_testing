@@ -246,10 +246,10 @@ function urutora:draw()
     if v.visible then
       if utils.needsBase(v) then
         v:drawBaseRectangle()
-      else
-        if v.draw then
-          v:draw()
-        end
+      end
+
+      if v.draw then
+        v:draw()
       end
 
       if not utils.isPanel(v) then

@@ -23,6 +23,12 @@ local lineExtensionTime = 3
 local bigLabel_y = center_y - 100
 local bigLabel_offset_y = 130
 
+local badprintTime = 0.5
+
+local function badprint(text, progress)
+    return text:sub(1, #text*progress)
+end
+
 function GameState:lock()
     self.rockButton:disable()
     self.paperButton:disable()
@@ -103,6 +109,8 @@ function GameState:init()
         x = x, y = y,
         w = w, h = h,
         text = 'Rock',
+        customLayers = { bgButton = ROCK_ICON },
+        scale = 0.1
     }):disable()
 
     x = center_x - w/2
@@ -110,6 +118,8 @@ function GameState:init()
         x = x, y = y,
         w = w, h = h,
         text = 'Paper',
+        customLayers = { bgButton = PAPER_ICON },
+        scale = 0.1
     }):disable()
 
     x = center_x + w/2 + button_offset
@@ -117,6 +127,8 @@ function GameState:init()
         x = x, y = y,
         w = w, h = h,
         text = 'Scissors',
+        customLayers = { bgButton = SCISSORS_ICON },
+        scale = 0.1
     }):disable()
 
     rockButton:action(function (e)
@@ -168,6 +180,8 @@ function GameState:init()
     self.inGameList = false
 
     self.paused = false
+    self.badprintProgress = 0
+    self.gameResultText = ''
 end
 
 function GameState:enterHost()
@@ -263,72 +277,34 @@ function GameState:showResult(opponentSign)
     local playerSign = self.currentSign
     local gameResultLabel = self.gameResultLabel
     local result = resolve(playerSign, opponentSign)
+    
+    self.badprintProgress = 0
 
     if result == 'win' then
-        gameResultLabel.text = Player.name .. ' won!'
+        self.gameResultText = Player.name .. ' won!'
         self.playerScore = self.playerScore + 1
     end
     
     if result == 'lose' then
-        gameResultLabel.text = self.opponent.name .. ' won!'
+        self.gameResultText = self.opponent.name .. ' won!'
         self.opponentScore = self.opponentScore + 1
     end
 
     if result == 'draw' then
-        gameResultLabel.text = 'Draw!'
+        self.gameResultText = 'Draw!'
     end
 
     self.opponentLabel.text = self.opponent.name .. ': ' .. self.opponentScore
     self.playerLabel.text = Player.name .. ': ' .. self.playerScore
     
     self.opponentSignLabel.text = opponentSign
+    self.gameResultLabel.text = ''
     self.playerSignLabel.text = playerSign
 end
 
-local timer = 0
-function GameState:receive(dt)
-    timer = timer + dt
-    if timer < RECEIVE_UPDATE_TIME then
-        return
-    end
-    timer = 0
-
-    while true do
-        local data, msg_or_ip, port_or_nil = Network:receive()
-        if not data then return end
-
-        if type(data) == "string" then
-            if data == 'is_server_up' and self.is_host and not self.opponent then
-                Network:send({ cmd = 'server_up', name = Player.name }, msg_or_ip, port_or_nil)
-            end
-
-            if data == 'ready' then
-                self.opponent.ready = true
-                if self.sign then
-                    self:lock()
-                end
-            end
-
-            if data == 'quit' then
-                self.gameResultLabel.text = 'Opponent left the game'
-                self.paused = true
-                self:lock()
-            end
-        end
-
-        if type(data) == "table" then
-            if data.cmd == 'connect' then
-                self:setOpponent(data.name, msg_or_ip, port_or_nil)
-            end
-
-            if data.cmd == 'sign' then
-                self:showResult(data.sign)
-            end
-        end
-    end
-end
-
 function GameState:startRound()
+    self.badprintProgress = 0
+
     self.currentSign = nil
     self.rockButton.y = button_y
     self.paperButton.y = button_y
@@ -341,8 +317,10 @@ function GameState:startRound()
     self.roundNum = self.roundNum + 1
 
     self.opponentSignLabel.text = ''
-    self.gameResultLabel.text = 'ROUND ' .. self.roundNum
+    self.gameResultLabel.text = ''
     self.playerSignLabel.text = ''
+
+    self.gameResultText = 'ROUND ' .. self.roundNum
     
     self.line.extensioning = false
     self.tweenLineLength = tween.new(roundTime, self.line, { length = 0 }, 'linear')
@@ -388,12 +366,58 @@ function GameState:updateTween(dt)
     self.line.x = center_x - self.line.length / 2
 end
 
+local timer = 0
+function GameState:receive(dt)
+    timer = timer + dt
+    if timer < RECEIVE_UPDATE_TIME then
+        return
+    end
+    timer = 0
+
+    while true do
+        local data, msg_or_ip, port_or_nil = Network:receive()
+        if not data then return end
+
+        if type(data) == "string" then
+            if data == 'is_server_up' and self.is_host and not self.opponent then
+                Network:send({ cmd = 'server_up', name = Player.name }, msg_or_ip, port_or_nil)
+            end
+
+            if data == 'ready' then
+                self.opponent.ready = true
+                if self.sign then
+                    self:lock()
+                end
+            end
+
+            if data == 'quit' then
+                self.gameResultLabel.text = 'Opponent left the game'
+                self.paused = true
+                self:lock()
+            end
+        end
+
+        if type(data) == "table" then
+            if data.cmd == 'connect' then
+                self:setOpponent(data.name, msg_or_ip, port_or_nil)
+            end
+
+            if data.cmd == 'sign' then
+                self:showResult(data.sign)
+            end
+        end
+    end
+end
+
 function GameState:update(dt)
     self:receive(dt)
 
     if not self.paused then
         self:updateTween(dt)
     end
+    
+    self.badprintProgress = self.badprintProgress + dt
+    self.gameResultLabel.text = badprint(self.gameResultText, self.badprintProgress/badprintTime)
 end
 
 function GameState:draw()
