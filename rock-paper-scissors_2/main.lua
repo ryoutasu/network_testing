@@ -34,5 +34,5 @@ function love.draw()
 end
 
 function love.quit()
-    if Network.connected then Network:close() end
+    -- if Network.connected then Network:close() end
 end

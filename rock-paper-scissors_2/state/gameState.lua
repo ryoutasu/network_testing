@@ -30,6 +30,8 @@ function GameState:lock()
 end
 
 function GameState:setSign(sign)
+    self:lock()
+
     self.rockButton.y = button_y
     self.paperButton.y = button_y
     self.scissorsButton.y = button_y
@@ -45,7 +47,6 @@ function GameState:setSign(sign)
 
         if opponent and opponent.ready then
             -- begin countdown ?
-            self:lock()
         end
     end
 
@@ -62,8 +63,8 @@ function GameState:init()
     local gameResultLabel = Urutora.label({
         x = x, y = y,
         w = w, h = h,
-        text = 'Game result',
-    }):setStyle({ font = LABEL_FONT }):hide()
+        text = '',
+    }):setStyle({ font = LABEL_FONT })
 
     w, h = 100, 30
     x, y = 30, bigLabel_y + bigLabel_offset_y
@@ -85,15 +86,15 @@ function GameState:init()
     local playerSignLabel = u.label({
         x = x, y = y,
         w = w, h = h,
-        text = 'Player sign'
-    }):hide()
+        text = ''
+    }):setStyle({ font = SIGN_FONT })
 
     y = opponentLabel.y
     local opponentSignLabel = u.label({
         x = x, y = y,
         w = w, h = h,
-        text = 'Opponent sign'
-    }):hide()
+        text = ''
+    }):setStyle({ font = SIGN_FONT })
 
     -- Game controls
     w, h = button_w, button_h
@@ -162,6 +163,8 @@ function GameState:init()
     self.tweenLineLength = nil
 
     self.roundNum = 0
+    self.playerScore = 0
+    self.opponentScore = 0
     self.inGameList = false
 
     self.paused = false
@@ -263,17 +266,23 @@ function GameState:showResult(opponentSign)
 
     if result == 'win' then
         gameResultLabel.text = Player.name .. ' won!'
+        self.playerScore = self.playerScore + 1
     end
     
     if result == 'lose' then
         gameResultLabel.text = self.opponent.name .. ' won!'
+        self.opponentScore = self.opponentScore + 1
     end
 
     if result == 'draw' then
         gameResultLabel.text = 'Draw!'
     end
+
+    self.opponentLabel.text = self.opponent.name .. ': ' .. self.opponentScore
+    self.playerLabel.text = Player.name .. ': ' .. self.playerScore
     
-    gameResultLabel:show()
+    self.opponentSignLabel.text = opponentSign
+    self.playerSignLabel.text = playerSign
 end
 
 local timer = 0
@@ -301,9 +310,9 @@ function GameState:receive(dt)
             end
 
             if data == 'quit' then
-                self:lock()
                 self.gameResultLabel.text = 'Opponent left the game'
-                    self.paused = true
+                self.paused = true
+                self:lock()
             end
         end
 
@@ -406,6 +415,8 @@ function GameState:quit()
     if opponent then
         Network:send('quit', opponent.ip, opponent.port)
     end
+
+    return false
 end
 
 return GameState
