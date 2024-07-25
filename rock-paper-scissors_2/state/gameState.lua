@@ -73,17 +73,19 @@ function GameState:init()
     }):setStyle({ font = LABEL_FONT })
 
     w, h = 100, 30
-    x, y = 30, bigLabel_y + bigLabel_offset_y
+    x, y = 15, bigLabel_y + bigLabel_offset_y
     local playerLabel = u.label({
         x = x, y = y,
         w = w, h = h,
+        align = 'left',
         text = 'Player: 0'
     })
 
-    x, y = 30, bigLabel_y - bigLabel_offset_y
+    x, y = x, bigLabel_y - bigLabel_offset_y
     local opponentLabel = u.label({
         x = x, y = y,
         w = w, h = h,
+        align = 'left',
         text = 'Opponent...: 0'
     })
 
@@ -109,7 +111,7 @@ function GameState:init()
         x = x, y = y,
         w = w, h = h,
         text = 'Rock',
-        customLayers = { bgButton = ROCK_ICON },
+        -- customLayers = { bgButton = ROCK_ICON },
         scale = 0.1
     }):disable()
 
@@ -118,7 +120,7 @@ function GameState:init()
         x = x, y = y,
         w = w, h = h,
         text = 'Paper',
-        customLayers = { bgButton = PAPER_ICON },
+        -- customLayers = { bgButton = PAPER_ICON },
         scale = 0.1
     }):disable()
 
@@ -127,7 +129,7 @@ function GameState:init()
         x = x, y = y,
         w = w, h = h,
         text = 'Scissors',
-        customLayers = { bgButton = SCISSORS_ICON },
+        -- customLayers = { bgButton = SCISSORS_ICON },
         scale = 0.1
     }):disable()
 
@@ -142,6 +144,56 @@ function GameState:init()
     end)
     -- Game controls
 
+    w, h = 200, 30
+    local playerChatLabel = u.label({
+        x = playerLabel.x, y = playerLabel.y + 30,
+        w = w, h = h,
+        align = 'left',
+        text = '> '
+    })
+
+    local opponentChatLabel = u.label({
+        x = opponentLabel.x, y = opponentLabel.y + 30,
+        w = w, h = h,
+        align = 'left',
+        text = '> '
+    })
+
+    x, y = center_x - w/2, button_y_clicked - 40
+    local chatBoxText = u.text({
+        x = x, y = y,
+        w = w, h = h,
+        align = 'left',
+        text = 'Say: ',
+    }):action(function (e)
+        if e.value.scancode == 'backspace' and #e.value.newText < 5 then
+            e.target.text = 'Say: '
+            return
+        end
+
+        if e.value.scancode == 'return' then
+            if self.doShowChatBox then
+                u:setFocusedNode(e.target)
+                self.doShowChatBox = false
+                return
+            end
+            local playerChatMessage = string.sub(e.target.text, 6)
+            if playerChatMessage == '' then return end
+
+            if self.opponent then
+                Network:send({ cmd = 'chat_message', message = playerChatMessage }, self.opponent.ip, self.opponent.port)
+            end
+
+            self.badprintPlayerProgress = 0
+            self.playerChatMessage = playerChatMessage
+            playerChatLabel.text = '> '
+            e.target.text = 'Say: '
+            
+            u:setFocusedNode(e.target)
+            return
+        end
+    end):disable()
+
     u:add(gameResultLabel)
     u:add(playerLabel)
     u:add(opponentLabel)
@@ -150,7 +202,10 @@ function GameState:init()
     u:add(rockButton)
     u:add(paperButton)
     u:add(scissorsButton)
-    
+    u:add(playerChatLabel)
+    u:add(opponentChatLabel)
+    u:add(chatBoxText)
+
     self.gameResultLabel = gameResultLabel
     self.playerLabel = playerLabel
     self.opponentLabel = opponentLabel
@@ -159,6 +214,9 @@ function GameState:init()
     self.rockButton = rockButton
     self.paperButton = paperButton
     self.scissorsButton = scissorsButton
+    self.playerChatLabel = playerChatLabel
+    self.opponentChatLabel = opponentChatLabel
+    self.chatBoxText = chatBoxText
 
     self.u = u
     setup_state_urutora(self)
@@ -180,8 +238,14 @@ function GameState:init()
     self.inGameList = false
 
     self.paused = false
-    self.badprintProgress = 0
+    self.badprintGameResultProgress = 0
     self.gameResultText = ''
+
+    self.playerChatMessage = ''
+    self.opponentChatMessage = ''
+    self.doShowChatBox = false
+    self.badprintPlayerProgress = 0
+    self.badprintOpponentProgress = 0
 end
 
 function GameState:enterHost()
@@ -217,9 +281,12 @@ function GameState:setOpponent(name, ip, port)
     self.tweenLineLength = tween.new(lineExtensionTime, self.line, { length = lineLength })
     self.tweenLineColor = tween.new(lineExtensionTime, self.line, { color = lineColorGreen })
 
+    self.badprintGameResultProgress = 0
     self.opponentSignLabel.text = self.opponent.name
-    self.gameResultLabel.text = 'VS'
+    self.gameResultText = 'VS'
     self.playerSignLabel.text = Player.name
+
+    self.chatBoxText:enable()
 end
 
 function GameState:enter(state, server, name)
@@ -275,10 +342,9 @@ end
 
 function GameState:showResult(opponentSign)
     local playerSign = self.currentSign
-    local gameResultLabel = self.gameResultLabel
     local result = resolve(playerSign, opponentSign)
     
-    self.badprintProgress = 0
+    self.badprintGameResultProgress = 0
 
     if result == 'win' then
         self.gameResultText = Player.name .. ' won!'
@@ -303,7 +369,7 @@ function GameState:showResult(opponentSign)
 end
 
 function GameState:startRound()
-    self.badprintProgress = 0
+    self.badprintGameResultProgress = 0
 
     self.currentSign = nil
     self.rockButton.y = button_y
@@ -391,7 +457,7 @@ function GameState:receive(dt)
             end
 
             if data == 'quit' then
-                self.gameResultLabel.text = 'Opponent left the game'
+                self.gameResultText = 'Opponent left the game'
                 self.paused = true
                 self:lock()
             end
@@ -405,6 +471,12 @@ function GameState:receive(dt)
             if data.cmd == 'sign' then
                 self:showResult(data.sign)
             end
+
+            if data.cmd == 'chat_message' then
+                self.badprintOpponentProgress = 0
+                self.opponentChatMessage = data.message
+                self.opponentChatLabel.text = '> '
+            end
         end
     end
 end
@@ -416,8 +488,14 @@ function GameState:update(dt)
         self:updateTween(dt)
     end
     
-    self.badprintProgress = self.badprintProgress + dt
-    self.gameResultLabel.text = badprint(self.gameResultText, self.badprintProgress/badprintTime)
+    self.badprintGameResultProgress = self.badprintGameResultProgress + dt
+    self.gameResultLabel.text = badprint(self.gameResultText, self.badprintGameResultProgress/badprintTime)
+
+    self.badprintPlayerProgress = self.badprintPlayerProgress + dt
+    self.badprintOpponentProgress = self.badprintOpponentProgress + dt
+
+    self.playerChatLabel.text = '> ' .. badprint(self.playerChatMessage, self.badprintPlayerProgress/badprintTime)
+    self.opponentChatLabel.text = '> ' .. badprint(self.opponentChatMessage, self.badprintOpponentProgress/badprintTime)
 end
 
 function GameState:draw()
@@ -441,6 +519,21 @@ function GameState:quit()
     end
 
     return false
+end
+
+function GameState:openChatBox()
+    if self.chatBoxText.focused or not self.chatBoxText.enabled then return end
+
+    self.u:setFocusedNode(self.chatBoxText)
+    self.doShowChatBox = true
+end
+
+function GameState:keypressed(key)
+    if key == 'return' then
+        self:openChatBox()
+    elseif key == 'escape' then
+        self.chatBoxText.focused = false
+    end
 end
 
 return GameState
